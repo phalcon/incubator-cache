@@ -38,7 +38,7 @@
     "codeception/module-asserts": "^1.0.0",
     "codeception/module-phalcon4": "^1.0.3",
     "phpstan/phpstan": "^0.12.18",
-    "vlucas/phpdotenv": "^2.5",
+    "vlucas/phpdotenv": "^4.1",
     "codeception/module-filesystem": "^1.0"
   },
   "autoload": {
@@ -49,6 +49,7 @@
   "autoload-dev": {
     "psr-4": {
       "Phalcon\\Incubator\\Cache\\Tests\\Unit\\": "tests/unit/",
+      "Phalcon\\Incubator\\Cache\\Tests\\Functional\\": "tests/functional/",
       "Phalcon\\Incubator\\Cache\\Test\\Fixtures\\": "tests/_data/fixtures/"
     }
   },
