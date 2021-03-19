@@ -62,8 +62,13 @@ class Aerospike extends AbstractAdapter implements CacheAdapterInterface
         }
 
         parent::__construct($factory, $options);
+
+        $this->initSerializer();
     }
 
+    /**
+     * @return bool
+     */
     public function clear(): bool
     {
         $success = true;
@@ -78,8 +83,15 @@ class Aerospike extends AbstractAdapter implements CacheAdapterInterface
         return $success;
     }
 
+    /**
+     * @param string $key
+     * @param int    $value
+     *
+     * @return bool|int|mixed
+     */
     public function decrement(string $key, int $value = 1)
     {
+        $cache = [];
         $prefixedKey = $this->getPrefixedKey($key);
         $aKey = $this->buildKey($prefixedKey);
         $this->getAdapter()->increment($aKey, 'value', -1 * abs($value));
@@ -93,6 +105,11 @@ class Aerospike extends AbstractAdapter implements CacheAdapterInterface
         return $cache['bins']['value'];
     }
 
+    /**
+     * @param string $key
+     *
+     * @return bool
+     */
     public function delete(string $key): bool
     {
         $prefixedKey = $this->getPrefixedKey($key);
@@ -103,8 +120,15 @@ class Aerospike extends AbstractAdapter implements CacheAdapterInterface
         return $status == \Aerospike::OK;
     }
 
+    /**
+     * @param string $key
+     * @param mixed   $defaultValue
+     *
+     * @return mixed|null
+     */
     public function get(string $key, $defaultValue = null)
     {
+        $cache = [];
         $prefixedKey = $this->getPrefixedKey($key);
         $aKey = $this->buildKey($prefixedKey);
 
@@ -137,6 +161,11 @@ class Aerospike extends AbstractAdapter implements CacheAdapterInterface
         return $this->adapter;
     }
 
+    /**
+     * @param string $prefix
+     *
+     * @return array
+     */
     public function getKeys(string $prefix = ''): array
     {
         if (!$prefix) {
@@ -170,16 +199,29 @@ class Aerospike extends AbstractAdapter implements CacheAdapterInterface
         return $keys;
     }
 
+    /**
+     * @param string $key
+     *
+     * @return bool
+     */
     public function has(string $key): bool
     {
+        $cache = [];
         $prefixedKey = $this->getPrefixedKey($key);
         $aKey = $this->buildKey($prefixedKey);
 
         return $this->getAdapter()->exists($aKey, $cache) == \Aerospike::OK;
     }
 
+    /**
+     * @param string $key
+     * @param int    $value
+     *
+     * @return bool|int|mixed
+     */
     public function increment(string $key, int $value = 1)
     {
+        $cache = [];
         $prefixedKey = $this->getPrefixedKey($key);
         $aKey = $this->buildKey($prefixedKey);
         $this->getAdapter()->increment($aKey, 'value', $value);
@@ -193,13 +235,24 @@ class Aerospike extends AbstractAdapter implements CacheAdapterInterface
         return $cache['bins']['value'];
     }
 
+    /**
+     * @param string $key
+     * @param mixed  $value
+     * @param mixed   $ttl
+     *
+     * @return bool
+     * @throws Exception
+     * @throws \Phalcon\Storage\Exception
+     */
     public function set(string $key, $value, $ttl = null): bool
     {
         $prefixedKey = $this->getPrefixedKey($key);
         $content = $this->getSerializedData($value);
         $ttl = $this->getTtl($ttl);
         $aKey = $this->buildKey($prefixedKey);
-        $bins['value'] = $content;
+        $bins = [
+            "value" => $content,
+        ];
 
         $status = $this->getAdapter()->put(
             $aKey,

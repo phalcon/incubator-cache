@@ -21,6 +21,11 @@ class Database extends AbstractAdapter implements CacheAdapterInterface
     protected $table;
 
     /**
+     * @var DbAdapterInterface
+     */
+    protected $adapter;
+
+    /**
      * @var array
      */
     protected $options = [];
@@ -57,8 +62,13 @@ class Database extends AbstractAdapter implements CacheAdapterInterface
         );
 
         parent::__construct($factory, $options);
+
+        $this->initSerializer();
     }
 
+    /**
+     * @return bool
+     */
     public function clear(): bool
     {
         $this->getAdapter()->execute("DELETE FROM {$this->table}");
@@ -66,6 +76,12 @@ class Database extends AbstractAdapter implements CacheAdapterInterface
         return true;
     }
 
+    /**
+     * @param string $key
+     * @param int    $value
+     *
+     * @return bool|int
+     */
     public function decrement(string $key, int $value = 1)
     {
         if (!$this->has($key)) {
@@ -78,6 +94,11 @@ class Database extends AbstractAdapter implements CacheAdapterInterface
         return $this->set($key, $data);
     }
 
+    /**
+     * @param string $key
+     *
+     * @return bool
+     */
     public function delete(string $key): bool
     {
         $prefixedKey = $this->getPrefixedKey($key);
@@ -91,7 +112,7 @@ class Database extends AbstractAdapter implements CacheAdapterInterface
             ]
         );
 
-        if (!Arr::has($row, 'rowcount')) {
+        if (!Arr::has($row, 'rowcount') || $row['rowcount'] == 0) {
             return false;
         }
 
@@ -103,6 +124,12 @@ class Database extends AbstractAdapter implements CacheAdapterInterface
         );
     }
 
+    /**
+     * @param string $key
+     * @param mixed   $defaultValue
+     *
+     * @return mixed|null
+     */
     public function get(string $key, $defaultValue = null)
     {
         $prefixedKey = $this->getPrefixedKey($key);
@@ -145,6 +172,11 @@ class Database extends AbstractAdapter implements CacheAdapterInterface
         return $this->adapter;
     }
 
+    /**
+     * @param string $prefix
+     *
+     * @return array
+     */
     public function getKeys(string $prefix = ''): array
     {
         if (!$prefix) {
@@ -176,6 +208,11 @@ class Database extends AbstractAdapter implements CacheAdapterInterface
         return $keys;
     }
 
+    /**
+     * @param string $key
+     *
+     * @return bool
+     */
     public function has(string $key): bool
     {
         $prefixedKey = $this->getPrefixedKey($key);
@@ -208,6 +245,12 @@ class Database extends AbstractAdapter implements CacheAdapterInterface
         return true;
     }
 
+    /**
+     * @param string $key
+     * @param int    $value
+     *
+     * @return bool|int
+     */
     public function increment(string $key, int $value = 1)
     {
         if (!$this->has($key)) {
@@ -220,6 +263,14 @@ class Database extends AbstractAdapter implements CacheAdapterInterface
         return $this->set($key, $data);
     }
 
+    /**
+     * @param string $key
+     * @param mixed  $value
+     * @param mixed   $ttl
+     *
+     * @return bool
+     * @throws \Phalcon\Storage\Exception
+     */
     public function set(string $key, $value, $ttl = null): bool
     {
         $prefixedKey = $this->getPrefixedKey($key);
@@ -239,7 +290,7 @@ class Database extends AbstractAdapter implements CacheAdapterInterface
                 [
                     $prefixedKey,
                     $this->getSerializedData($value),
-                    $this->getTtl($ttl),
+                    $this->getLifetime($ttl),
                 ]
             );
         } else {
@@ -247,12 +298,23 @@ class Database extends AbstractAdapter implements CacheAdapterInterface
                 "UPDATE {$this->table} SET data = ?, lifetime = ? WHERE key_name = ?",
                 [
                     $this->getSerializedData($value),
-                    $this->getTtl($ttl),
+                    $this->getLifetime($ttl),
                     $prefixedKey
                 ]
             );
         }
 
         return $status;
+    }
+
+    /**
+     * @param mixed $ttl
+     *
+     * @return int
+     * @throws \Phalcon\Storage\Exception
+     */
+    private function getLifetime($ttl): int
+    {
+        return time() + $this->getTtl($ttl);
     }
 }
