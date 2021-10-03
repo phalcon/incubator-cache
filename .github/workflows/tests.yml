@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       extensions: mbstring, intl, json, phalcon4, mysql, pgsql, xdebug, mongodb, redis, aerospike
-      key: 0.1
+      key: cache-v0.0.2
     strategy:
       fail-fast: false
       matrix:
@@ -57,7 +57,7 @@ jobs:
           MYSQL_TEST_DB_PORT: ${{ job.services.mysql.ports['3306'] }}
           POSTGRES_TEST_DB_PORT: ${{ job.services.postgres.ports['5432'] }}
         if: success()
-        run: vendor/bin/codecept build && vendor/bin/codecept run --coverage-xml=coverage-${{ matrix.php-versions }}.xml
+        run: vendor/bin/codecept run --coverage-xml=coverage-${{ matrix.php-versions }}.xml
 
       - name: Upload coverage to Codecov
         if: success()
