@@ -52,6 +52,10 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-suggest
 
+      - name: Setup tests
+        if: success()
+        run: vendor/bin/codecept build
+
       - name: Run test suites
         env:
           MYSQL_TEST_DB_PORT: ${{ job.services.mysql.ports['3306'] }}
